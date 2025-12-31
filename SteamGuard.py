@@ -583,12 +583,53 @@ def draw_progress_bar(seconds_remaining, total_seconds=30, width=30):
     return bar
 
 
+def add_new_account():
+    """Launch add_account.py script"""
+    import subprocess
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    add_account_script = os.path.join(script_dir, 'add_account.py')
+    
+    if os.path.exists(add_account_script):
+        try:
+            subprocess.run([sys.executable, add_account_script])
+        except Exception as e:
+            print(f"Error launching add_account.py: {e}")
+            input("Press Enter to continue...")
+    else:
+        print("Error: add_account.py not found")
+        input("Press Enter to continue...")
+
 def run_code():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     mafiles_dir = os.path.join(script_dir, 'maFiles')
-    if not os.listdir(mafiles_dir):
-        print("Directory is empty")
-        return
+    
+    # Check if maFiles directory exists
+    if not os.path.exists(mafiles_dir):
+        os.makedirs(mafiles_dir)
+    
+    # Check if directory is empty
+    mafiles_list = [f for f in os.listdir(mafiles_dir) if f.endswith('.maFile')]
+    
+    if not mafiles_list:
+        clear_console()
+        print("=" * 60)
+        print("NO ACCOUNTS FOUND")
+        print("=" * 60)
+        print("\nNo Steam Guard accounts have been set up yet.")
+        print("\nWould you like to add a new account now?")
+        print("=" * 60)
+        
+        choice = input("\nAdd new account? (yes/no): ").strip().lower()
+        if not choice or choice in ['yes', 'y']:
+            add_new_account()
+            # Reload after adding account
+            mafiles_list = [f for f in os.listdir(mafiles_dir) if f.endswith('.maFile')]
+            if not mafiles_list:
+                print("\nNo accounts were added. Exiting...")
+                return
+        else:
+            print("\nExiting...")
+            return
 
     # Load all accounts
     accounts = []
@@ -604,7 +645,7 @@ def run_code():
                     })
 
     if not accounts:
-        print("No accounts found")
+        print("No valid accounts found")
         return
 
     # Initial sync with Steam
@@ -632,7 +673,7 @@ def run_code():
             print("=" * 60)
             print("STEAM GUARD AUTHENTICATOR")
             print("=" * 60)
-            print("\nPress 'Ctrl+C' to stop | Type '2' + Enter for confirmations\n")
+            print("\nPress 'Ctrl+C' to stop | Type '2' for new account | Type '3' for confirmations\n")
             
             # Display each account
             for account in accounts:
@@ -653,8 +694,23 @@ def run_code():
             readable, _, _ = select.select([sys.stdin], [], [], 0.1)
             if readable:
                 user_input = sys.stdin.readline().strip()
-                # Only respond to '2'
                 if user_input == '2':
+                    print("[Launching add account...]")
+                    add_new_account()
+                    # Reload accounts after adding
+                    accounts = []
+                    with os.scandir(mafiles_dir) as files:
+                        for file in files:
+                            if file.is_file() and file.name.endswith('.maFile'):
+                                with open(file, 'r') as f:
+                                    data = json.loads(f.read())
+                                    accounts.append({
+                                        'name': data['account_name'],
+                                        'steamid': data['Session']['SteamID'],
+                                        'secret': data['shared_secret']
+                                    })
+                    last_display_time = 0  # Force immediate redraw
+                elif user_input == '3':
                     print("[Loading confirmations...]")
                     verification_mode()
                     last_display_time = 0  # Force immediate redraw
