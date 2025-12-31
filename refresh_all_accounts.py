@@ -166,9 +166,8 @@ def steam_login_with_tokens(username, password, shared_secret):
 
 # Credentials
 credentials_map = {
-    'xkce27': ('xkce27', 'ymw@ntz3xau2gtk-VCT'),
-    'juanpi1588': ('juanpi1588', 'EHD_xtx-cnc0drw0wgp'),
-    'trikce': ('trikce', 'eqb6UYR5hxa1pvc-qna')
+    'account 1': ('username', 'password'),
+    'account 2': ('username', 'password')
 }
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
